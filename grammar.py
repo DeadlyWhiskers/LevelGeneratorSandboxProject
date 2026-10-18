@@ -56,7 +56,8 @@ class Grammar:
             nodes=[
                 Node(
                     id=node["id"],
-                    type=node["type"]
+                    type=node["type"],
+                    allow_puzzle=node.get("allow_puzzle", "inherit")
                 )
                 for node in replacement_data["nodes"]
             ],

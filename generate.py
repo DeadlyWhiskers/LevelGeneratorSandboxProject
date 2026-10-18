@@ -39,11 +39,12 @@ class LevelGraph:
         self.node_counters: dict[str, int] = {}
         
     # nodes
-    def add_node(self, node_type: str) -> Node:
+    def add_node(self, node_type: str, allow_puzzle: str = "allow") -> Node:
         node_id = self.generate_node_id(node_type)
         node = Node(
             id=node_id,
             type=node_type,
+            allow_puzzle=allow_puzzle
         )
 
         self.nodes[node_id] = node
@@ -131,7 +132,16 @@ class LevelGraph:
         node_mapping = {}
 
         for replacement_node in rule.replacement.nodes:
-            new_node = self.add_node(replacement_node.type)
+            if replacement_node.allow_puzzle == "inherit":
+                allow_puzzle = node.allow_puzzle
+            else:
+                allow_puzzle = replacement_node.allow_puzzle
+
+            new_node = self.add_node(
+                replacement_node.type,
+                allow_puzzle
+            )
+            
             node_mapping[replacement_node.id] = new_node.id
 
         
@@ -207,6 +217,11 @@ class LevelGraph:
 # generation
 
 class LevelGenerator:
+    PUZZLE_NODE_TYPES = {
+        "locked_quest"
+    }
+
+    
     def __init__(
         self,
         grammar: Grammar,
@@ -264,6 +279,9 @@ class LevelGenerator:
             outgoing_count = len(graph.outgoing_edges(node.id))
 
             for rule in self.grammar.get_rules(node.type):
+                # Проверка возможности размещения головоломки
+                if not self.rule_respects_puzzle_policy(node, rule):
+                    continue
                 # Проверяем число входов
                 if (
                     rule.required_inputs is not None
@@ -346,6 +364,26 @@ class LevelGenerator:
 
         # Все варианты привели в тупик
         return None
+    
+    def rule_respects_puzzle_policy(
+        self,
+        node: Node,
+        rule: GrammarRule
+    ) -> bool:
+        for replacement_node in rule.replacement.nodes:
+            if replacement_node.type not in self.PUZZLE_NODE_TYPES:
+                continue
+
+            if replacement_node.allow_puzzle == "inherit":
+                effective_policy = node.allow_puzzle
+            else:
+                effective_policy = replacement_node.allow_puzzle
+
+            if effective_policy == "forbid":
+                return False
+
+        return True
+
 
     @staticmethod
     def weighted_order(actions, rng):
@@ -738,7 +776,7 @@ def main():
     # seed = 150
     rngen = Random(seed)
     
-    grammar = Grammar.from_json("rules.json")
+    grammar = Grammar.from_json("rules_upped.json")
 
     generator = LevelGenerator(
         grammar=grammar,

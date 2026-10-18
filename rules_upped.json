@@ -10,15 +10,18 @@
           "nodes": [
             {
               "id": "sr",
-              "type": "start_room"
+              "type": "start_room",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "sg",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "fn",
-              "type": "finish"
+              "type": "finish",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -64,7 +67,8 @@
           "nodes": [
             {
               "id": "rm",
-              "type": "room"
+              "type": "room",
+              "allow_puzzle": "inherit"
             }
           ]
         },
@@ -100,11 +104,13 @@
           "nodes": [
             {
               "id": "sg1",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "sg2",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -146,11 +152,13 @@
           "nodes": [
             {
               "id": "sg1",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "forbid"
             },
             {
               "id": "sg2",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "forbid"
             }
           ],
 
@@ -190,11 +198,13 @@
           "nodes": [
             {
               "id": "sg1",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "sg2",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "allow"
             }
           ],
 
@@ -233,7 +243,8 @@
           "nodes": [
             {
               "id": "lk",
-              "type": "locked_quest"
+              "type": "locked_quest",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -272,11 +283,13 @@
           "nodes": [
             {
               "id": "rm",
-              "type": "room"
+              "type": "room",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "ks",
-              "type": "key_segment"
+              "type": "key_segment",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -318,15 +331,18 @@
           "nodes": [
             {
               "id": "rm",
-              "type": "room"
+              "type": "room",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "ks",
-              "type": "key_segment"
+              "type": "key_segment",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "sg",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -372,11 +388,13 @@
           "nodes": [
             {
               "id": "sg",
-              "type": "segment"
+              "type": "segment",
+              "allow_puzzle": "inherit"
             },
             {
               "id": "ks",
-              "type": "key_segment"
+              "type": "key_segment",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -418,7 +436,8 @@
           "nodes": [
             {
               "id": "kr",
-              "type": "key_room"
+              "type": "key_room",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -456,7 +475,8 @@
           "nodes": [
             {
               "id": "gn",
-              "type": "generic_room"
+              "type": "generic_room",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -493,7 +513,8 @@
           "nodes": [
             {
               "id": "rw",
-              "type": "reward_room"
+              "type": "reward_room",
+              "allow_puzzle": "inherit"
             }
           ],
 
@@ -531,7 +552,8 @@
           "nodes": [
             {
               "id": "fr",
-              "type": "finish_room"
+              "type": "finish_room",
+              "allow_puzzle": "inherit"
             }
           ],
 

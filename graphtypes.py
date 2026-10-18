@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class Node:
     id: str
     type: str
+    allow_puzzle: str = "allow"
 
 @dataclass
 class Edge:
