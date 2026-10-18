@@ -213,6 +213,8 @@ class LevelGraph:
             for edge in self.edges
             if edge.from_node == node_id or edge.to_node == node_id
         )
+        
+    
 
 # generation
 
@@ -220,6 +222,7 @@ class LevelGenerator:
     PUZZLE_NODE_TYPES = {
         "locked_quest"
     }
+    MAX_DEGREE = 4
 
     
     def __init__(
@@ -227,6 +230,8 @@ class LevelGenerator:
         grammar: Grammar,
         budget_influence: float = 2.0,
         max_steps: int = 100,
+        debug = True,
+        search_states = 0
     ):
         self.grammar = grammar
         self.budget_influence = budget_influence
@@ -237,6 +242,8 @@ class LevelGenerator:
         size: tuple[int, int],
         rngen: Random,
     ) -> LevelGraph | None:
+        self.search_states = 0
+        print(f"[GEN] start size={size} max_steps={self.max_steps}")
         rows, cols = size
         max_rooms = rows * cols
 
@@ -254,6 +261,9 @@ class LevelGenerator:
             steps=0,
         )
 
+    def degree_check(self, graph, node_ids) -> bool:
+        return all(graph.degree(n) <= self.MAX_DEGREE for n in node_ids if graph.has_node(n))
+    
     def search(
         self,
         graph: LevelGraph,
@@ -262,12 +272,27 @@ class LevelGenerator:
         rng: Random,
         steps: int,
     ) -> LevelGraph | None:
+        
+        self.search_states += 1
+        print(
+            f"[GEN] state={self.search_states} depth={steps} "
+            f"nodes={len(graph.nodes)} edges={len(graph.edges)} "
+            f"budget={remaining_budget} nonterminals={len(graph.get_nonterminals())}"
+        )
         # Защита от бесконечного поиска
         if steps >= self.max_steps:
+            print(
+                f"[GEN] depth_limit state={self.search_states} "
+                f"depth={steps} nodes={len(graph.nodes)}"
+            )
             return None
 
         # Успешное завершение
-        if graph.is_complete():
+        if graph.is_complete(): 
+            print(
+                f"[GEN] complete state={self.search_states} "
+                f"nodes={len(graph.nodes)} edges={len(graph.edges)}"
+            )
             return graph
 
         # Собираем все допустимые действия:
@@ -319,6 +344,11 @@ class LevelGenerator:
 
         # Ни одного допустимого действия — тупик
         if not actions:
+            print(
+                f"[GEN] dead_end state={self.search_states} depth={steps} "
+                f"budget={remaining_budget} "
+                f"nonterminals={[f'{n.id}:{n.type}' for n in graph.get_nonterminals()]}"
+            )
             return None
 
         # Пробуем варианты в случайном порядке
@@ -327,7 +357,17 @@ class LevelGenerator:
             rng,
         )
 
+        print(
+            f"[GEN] actions state={self.search_states} "
+            f"count={len(ordered_actions)} "
+            f"rules={[f'{node_id}:{rule.id}' for node_id, rule, _ in ordered_actions]}"
+        )
+
         for node_id, rule, _ in ordered_actions:
+            print(
+                f"[GEN] try state={self.search_states} depth={steps} "
+                f"node={node_id} rule={rule.id} cost={rule.cost}"
+            )
             # Каждая ветка поиска работает со своей копией
             next_graph = copy.deepcopy(graph)
             
@@ -341,14 +381,21 @@ class LevelGenerator:
                 if edge.from_node == node_id
             }
 
-
             next_graph.replace_node(node_id, rule)
+            # Также добавляются добавленные узлы
+            touched = affected_nodes | {n for n in next_graph.nodes if n not in graph.nodes}
+            if not self.degree_check(next_graph, touched):
+                continue
             
             if any(
                 next_graph.degree(neighbor_id) > 4
                 for neighbor_id in affected_nodes
                 if next_graph.has_node(neighbor_id)
             ):
+                print(
+                    f"[GEN] reject_degree state={self.search_states} "
+                    f"node={node_id} rule={rule.id}"
+                )
                 continue
 
             result = self.search(
@@ -360,6 +407,10 @@ class LevelGenerator:
             )
 
             if result is not None:
+                print(
+                    f"[GEN] backtrack state={self.search_states} "
+                    f"depth={steps} node={node_id} rule={rule.id}"
+                )
                 return result
 
         # Все варианты привели в тупик
