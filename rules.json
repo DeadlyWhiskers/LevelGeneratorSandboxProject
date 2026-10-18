@@ -1,0 +1,565 @@
+{
+  "grammar": {
+    "rules": [
+      {
+        "id": "level1",
+
+        "from": "level",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "sr",
+              "type": "start_room"
+            },
+            {
+              "id": "sg",
+              "type": "segment"
+            },
+            {
+              "id": "fn",
+              "type": "finish"
+            }
+          ],
+
+          "edges": [
+            {
+              "from": "sr",
+              "to": "sg"
+            },
+            {
+              "from": "sg",
+              "to": "fn"
+            }
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "sr"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "fn"
+              ]
+            }
+          ]
+        },
+
+        "cost": 2,
+        "weight": 1.0
+      },
+      {
+        "id": "segment1",
+
+        "from": "segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "rm",
+              "type": "room"
+            }
+          ]
+        },
+        "edges": [],
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "rm"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "rm"
+              ]
+            }
+          ]
+        },
+
+        "cost": 0,
+        "weight": 1.0
+      },
+      {
+        "id": "segment2",
+
+        "from": "segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "sg1",
+              "type": "segment"
+            },
+            {
+              "id": "sg2",
+              "type": "segment"
+            }
+          ],
+
+          "edges": [
+            {
+              "from": "sg1",
+              "to": "sg2"
+            }
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "sg1"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "sg2"
+              ]
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0
+      },
+      {
+        "id": "segment3",
+
+        "from": "segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "sg1",
+              "type": "segment"
+            },
+            {
+              "id": "sg2",
+              "type": "segment"
+            }
+          ],
+
+          "edges": []
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "sg1",
+                "sg2"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "sg1",
+                "sg2"
+              ]
+            }
+          ]
+        },
+        "cost": 1,
+        "weight": 1.0,
+        "required_inputs": 1,
+        "required_outputs": 1
+      },
+      {
+        "id": "segment4",
+
+        "from": "segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "sg1",
+              "type": "segment"
+            },
+            {
+              "id": "sg2",
+              "type": "segment"
+            }
+          ],
+
+          "edges": [          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "sg1",
+                "sg2"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "sg1"
+              ]
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0,
+        "required_inputs": 1
+      }      ,
+      {
+        "id": "segment5",
+
+        "from": "segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "lk",
+              "type": "locked_quest"
+            }
+          ],
+
+          "edges": [
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "lk"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "lk"
+              ]
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0,
+        "required_outputs": 1
+      },
+      {
+        "id": "locked1",
+
+        "from": "locked_quest",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "rm",
+              "type": "room"
+            },
+            {
+              "id": "ks",
+              "type": "key_segment"
+            }
+          ],
+
+          "edges": [
+            {
+              "from": "rm",
+              "to": "ks"
+            }
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "rm"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "rm"
+              ],
+              "key_required": true
+            }
+          ]
+        },
+
+        "cost": 0,
+        "weight": 1.0
+      },{
+        "id": "locked2",
+
+        "from": "locked_quest",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "rm",
+              "type": "room"
+            },
+            {
+              "id": "ks",
+              "type": "key_segment"
+            },
+            {
+              "id": "sg",
+              "type": "segment"
+            }
+          ],
+
+          "edges": [
+            {
+              "from": "rm",
+              "to": "sg"
+            },
+            {
+              "from": "rm",
+              "to": "ks"
+            }
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "rm"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "rm"
+              ],
+              "key_required": true
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0
+      },{
+        "id": "key_segment1",
+
+        "from": "key_segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "sg",
+              "type": "segment"
+            },
+            {
+              "id": "ks",
+              "type": "key_segment"
+            }
+          ],
+
+          "edges": [
+            {
+              "from": "sg",
+              "to": "ks"
+            }
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "sg"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "ks"
+              ]
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0
+      },
+      {
+        "id": "key_segment2",
+
+        "from": "key_segment",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "kr",
+              "type": "key_room"
+            }
+          ],
+
+          "edges": [
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "kr"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "kr"
+              ]
+            }
+          ]
+        },
+
+        "cost": 0,
+        "weight": 1.0
+      },
+      {
+        "id": "room1",
+
+        "from": "room",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "gn",
+              "type": "generic_room"
+            }
+          ],
+
+          "edges": []
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "gn"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "gn"
+              ]
+            }
+          ]
+        },
+
+        "cost": 0,
+        "weight": 1.0
+      },
+      {
+        "id": "room2",
+
+        "from": "room",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "rw",
+              "type": "reward_room"
+            }
+          ],
+
+          "edges": [
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "rw"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "rw"
+              ]
+            }
+          ]
+        },
+
+        "cost": 0,
+        "weight": 1.0
+      },
+      {
+        "id": "finish1",
+
+        "from": "finish",
+
+        "replacement": {
+          "nodes": [
+            {
+              "id": "fr",
+              "type": "finish_room"
+            }
+          ],
+
+          "edges": [
+          ]
+        },
+
+        "interface": {
+          "inputs": [
+            {
+              "connect_to": [
+                "fr"
+              ]
+            }
+          ],
+
+          "outputs": [
+            {
+              "connect_from": [
+                "fr"
+              ]
+            }
+          ]
+        },
+
+        "cost": 1,
+        "weight": 1.0
+      }
+    ]
+  }
+}
