@@ -141,7 +141,7 @@
         },
 
         "cost": 1,
-        "weight": 2.0
+        "weight": 3.5
       },
       {
         "id": "segment3",
@@ -185,7 +185,7 @@
           ]
         },
         "cost": 1,
-        "weight": 2.0,
+        "weight": 1.2,
         "required_inputs": 1,
         "required_outputs": 1
       },
@@ -231,7 +231,7 @@
         },
 
         "cost": 1,
-        "weight": 2.0,
+        "weight": 2.5,
         "required_inputs": 1
       }      ,
       {
@@ -541,7 +541,7 @@
         },
 
         "cost": 0,
-        "weight": 1.0
+        "weight": 0.5
       },
       {
         "id": "finish1",

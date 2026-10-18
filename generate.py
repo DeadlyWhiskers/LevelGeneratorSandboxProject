@@ -230,20 +230,44 @@ class LevelGenerator:
         grammar: Grammar,
         budget_influence: float = 2.0,
         max_steps: int = 100,
-        debug = True,
+        debug = False,
         search_states = 0
     ):
         self.grammar = grammar
         self.budget_influence = budget_influence
         self.max_steps = max_steps
-
+        self.debug = debug
+        
+    @staticmethod
+    def is_bipartite(graph) -> bool:
+        adj = {n: set() for n in graph.nodes}
+        for e in graph.edges:
+            adj[e.from_node].add(e.to_node)
+            adj[e.to_node].add(e.from_node)
+        color = {}
+        for start in graph.nodes:
+            if start in color:
+                continue
+            color[start] = 0
+            stack = [start]
+            while stack:
+                u = stack.pop()
+                for v in adj[u]:
+                    if v not in color:
+                        color[v] = 1 - color[u]
+                        stack.append(v)
+                    elif color[v] == color[u]:
+                        return False
+        return True
+    
     def generate(
         self,
         size: tuple[int, int],
         rngen: Random,
     ) -> LevelGraph | None:
         self.search_states = 0
-        print(f"[GEN] start size={size} max_steps={self.max_steps}")
+        if self.debug:
+            print(f"[GEN] start size={size} max_steps={self.max_steps}")
         rows, cols = size
         max_rooms = rows * cols
 
@@ -255,7 +279,7 @@ class LevelGenerator:
 
         return self.search(
             graph=graph,
-            remaining_budget=max_rooms,
+            remaining_budget=max_rooms*.7,
             max_budget=max_rooms,
             rng=rng,
             steps=0,
@@ -263,6 +287,37 @@ class LevelGenerator:
 
     def degree_check(self, graph, node_ids) -> bool:
         return all(graph.degree(n) <= self.MAX_DEGREE for n in node_ids if graph.has_node(n))
+    
+    def rule_degree_ok(self, graph, node, rule) -> bool:
+        inc = graph.incoming_edges(node.id)
+        out = graph.outgoing_edges(node.id)
+
+        in_targets = [t for i in rule.interface.inputs for t in i.connect_to]
+        out_sources = [s for o in rule.interface.outputs for s in o.connect_from]
+
+        # степени новых узлов
+        deg = {n.id: 0 for n in rule.replacement.nodes}
+        for e in rule.replacement.edges:
+            deg[e.from_node] += 1
+            deg[e.to_node] += 1
+        for t in in_targets:
+            deg[t] += len(inc)
+        for s in out_sources:
+            deg[s] += len(out)
+        if any(d > self.MAX_DEGREE for d in deg.values()):
+            return False
+
+        # степени соседей: каждое ребро к node заменяется на len(targets) рёбер
+        delta = {}
+        for e in inc:
+            delta[e.from_node] = delta.get(e.from_node, 0) - 1 + len(in_targets)
+        for e in out:
+            delta[e.to_node] = delta.get(e.to_node, 0) - 1 + len(out_sources)
+        for nb, d in delta.items():
+            if graph.degree(nb) + d > self.MAX_DEGREE:
+                return False
+
+        return True
     
     def search(
         self,
@@ -274,14 +329,16 @@ class LevelGenerator:
     ) -> LevelGraph | None:
         
         self.search_states += 1
-        print(
+        if self.debug:
+                    print(
             f"[GEN] state={self.search_states} depth={steps} "
             f"nodes={len(graph.nodes)} edges={len(graph.edges)} "
             f"budget={remaining_budget} nonterminals={len(graph.get_nonterminals())}"
         )
         # Защита от бесконечного поиска
         if steps >= self.max_steps:
-            print(
+            if self.debug:
+                        print(
                 f"[GEN] depth_limit state={self.search_states} "
                 f"depth={steps} nodes={len(graph.nodes)}"
             )
@@ -289,7 +346,8 @@ class LevelGenerator:
 
         # Успешное завершение
         if graph.is_complete(): 
-            print(
+            if self.debug:
+                        print(
                 f"[GEN] complete state={self.search_states} "
                 f"nodes={len(graph.nodes)} edges={len(graph.edges)}"
             )
@@ -302,6 +360,7 @@ class LevelGenerator:
         for node in graph.get_nonterminals():
             incoming_count = len(graph.incoming_edges(node.id))
             outgoing_count = len(graph.outgoing_edges(node.id))
+            node_has_action = False 
 
             for rule in self.grammar.get_rules(node.type):
                 # Проверка возможности размещения головоломки
@@ -324,6 +383,10 @@ class LevelGenerator:
                 # Проверяем бюджет
                 if rule.cost > remaining_budget:
                     continue
+                
+                # Не будет ли узел превышать степерь связности после совей замены
+                if not self.rule_degree_ok(graph, node, rule):
+                    continue
 
                 # Рассчитываем скорректированный вес
                 if rule.cost == 0:
@@ -341,10 +404,18 @@ class LevelGenerator:
                     actions.append(
                         (node.id, rule, adjusted_weight)
                     )
+                    node_has_action = True
+            
+            # Если узел по итогу не может быть раскрыт, то отмена
+            if not node_has_action:                                 
+                if self.debug:
+                            print(f"[GEN] dead_node state={self.search_states} node={node.id}")
+                return None
 
         # Ни одного допустимого действия — тупик
         if not actions:
-            print(
+            if self.debug:
+                        print(
                 f"[GEN] dead_end state={self.search_states} depth={steps} "
                 f"budget={remaining_budget} "
                 f"nonterminals={[f'{n.id}:{n.type}' for n in graph.get_nonterminals()]}"
@@ -357,14 +428,16 @@ class LevelGenerator:
             rng,
         )
 
-        print(
+        if self.debug:
+                    print(
             f"[GEN] actions state={self.search_states} "
             f"count={len(ordered_actions)} "
             f"rules={[f'{node_id}:{rule.id}' for node_id, rule, _ in ordered_actions]}"
         )
 
         for node_id, rule, _ in ordered_actions:
-            print(
+            if self.debug:
+                        print(
                 f"[GEN] try state={self.search_states} depth={steps} "
                 f"node={node_id} rule={rule.id} cost={rule.cost}"
             )
@@ -392,7 +465,8 @@ class LevelGenerator:
                 for neighbor_id in affected_nodes
                 if next_graph.has_node(neighbor_id)
             ):
-                print(
+                if self.debug:
+                            print(
                     f"[GEN] reject_degree state={self.search_states} "
                     f"node={node_id} rule={rule.id}"
                 )
@@ -407,7 +481,8 @@ class LevelGenerator:
             )
 
             if result is not None:
-                print(
+                if self.debug:
+                            print(
                     f"[GEN] backtrack state={self.search_states} "
                     f"depth={steps} node={node_id} rule={rule.id}"
                 )
@@ -573,6 +648,19 @@ def place_level(
             )
             if 0 <= r < rows and 0 <= c < cols
         ]
+    
+    def placement_feasible(node_id: str) -> bool:
+        # Хватит ли свободных клеток вокруг комнаты для её ещё не размещённых соседей
+        row, col = positions[node_id]
+        free = sum(
+            1 for c in neighboring_cells(row, col)
+            if c not in occupied
+        )
+        unplaced = sum(
+            1 for nb in adjacency[node_id]
+            if nb not in positions
+        )
+        return free >= unplaced
 
     def get_candidates(node_id: str) -> list[tuple[int, int]]:
         # Все уже размещённые соседи этой комнаты по графу.
@@ -658,9 +746,18 @@ def place_level(
             # Пробуем разместить комнату.
             positions[node_id] = cell
             occupied[cell] = node_id
-
-            if search():
-                return True
+            
+            # Остались ли ещё места для неё или её размещённых соседей
+            if (
+                placement_feasible(node_id)
+                and all(
+                    placement_feasible(nb)
+                    for nb in adjacency[node_id]
+                    if nb in positions
+                )
+            ):
+                if search():
+                    return True
 
             # Откат: освобождаем клетку.
             del positions[node_id]
@@ -817,47 +914,71 @@ def render_placement(
 
     
 def main():
-
-    # Найти где виснет + добавить функцию отсечения лишних маршрутов
+    # Добавить проверку на кратчайший путь и наличие на нём запертой двери, иначе - перерегенерировать
+    # + проверка, что комната не может разделиться, если перед ней дверь с ключом
     row = int(sys.argv[1])
     col = int(sys.argv[2])
     seed = int(sys.argv[3])
     # row = 8
     # col = 8
     # seed = 150
-    rngen = Random(seed)
-    
     grammar = Grammar.from_json("rules_upped.json")
-
+    
     generator = LevelGenerator(
         grammar=grammar,
         budget_influence=2.0,
         max_steps=10000,
     )
 
-    graph = generator.generate(
-        size=(row, col),
-        rngen=rngen,
-    )
-
-    if graph is None:
-        print("Не удалось сгенерировать граф")
+    for attempt in range(50):
+        gen_rng = Random(f"{seed}:gen:{attempt}")
+        graph = generator.generate((row, col), gen_rng)
+        if graph is None:
+            continue
+        if len(graph.nodes) < (row*col*0.3):
+            continue
+        if not LevelGenerator.is_bipartite(graph):
+            continue
+        
+        for p in range(10):
+            place_rng = Random(f"{seed}:place:{attempt}:{p}")
+            placement = place_level(graph, (row, col), place_rng, max_search_steps=2000)
+            if placement is not None:
+                break
+            
+        if placement is not None and graph is not None:
+            break
+        
+        
+    if placement is not None and graph is not None:
+        print(render_placement(graph, placement))
     else:
-        errors = generator.validate_graph(graph, (row, col))
+        print('Ошибка генерации')
+    # rngen = Random(seed)
 
-        if errors:
-            for error in errors:
-                print(f"Ошибка: {error}")
-        else:
-            placement = place_level(graph=graph,
-                                    size=(row, col),
-                                    rngen=rngen,
-                                    max_search_steps=10_000,
-                                    )
-            if placement is None:
-                print("Не удалось разместить уровень")
-            else:
-                print(render_placement(graph, placement))
+    # graph = generator.generate(
+    #     size=(row, col),
+    #     rngen=rngen,
+    # )
+
+    # if graph is None:
+    #     print("Не удалось сгенерировать граф")
+    # else:
+    #     errors = generator.validate_graph(graph, (row, col))
+
+    #     if errors:
+    #         for error in errors:
+    #             print(f"Ошибка: {error}")
+    #     else:
+    #         placement = place_level(graph=graph,
+    #                                 size=(row, col),
+    #                                 rngen=rngen,
+    #                                 max_search_steps=100000,
+    #                                 )
+    #         if placement is None:
+    #             print("Не удалось разместить уровень")
+    #         else:
+    #             print(render_placement(graph, placement))
                     
     #     print(render_placement(graph, placement))
 
