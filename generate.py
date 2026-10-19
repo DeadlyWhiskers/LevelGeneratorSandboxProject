@@ -5,6 +5,7 @@ from graphtypes import Node, Edge
 from random import Random
 import sys
 import copy
+from collections import deque
 
 @dataclass
 class Placement:
@@ -533,6 +534,59 @@ class LevelGenerator:
 
         return result
 
+    from collections import deque
+
+    @staticmethod
+    def shortest_path_info(
+        graph: LevelGraph,
+        directed: bool = False,
+    ) -> tuple[int, bool] | None:
+        """
+        BFS от стартовой комнаты до финишной.
+        Возвращает (длина пути в рёбрах, есть ли запертая дверь на пути)
+        или None, если финиш недостижим.
+        has_locked = True, если на КАЖДОМ кратчайшем пути есть запертая дверь.
+        """
+        starts = [n.id for n in graph.nodes.values() if n.type == "start_room"]
+        finishes = [n.id for n in graph.nodes.values() if n.type == "finish_room"]
+        if len(starts) != 1 or len(finishes) != 1:
+            return None
+        start, finish = starts[0], finishes[0]
+
+        # Смежность: сосед -> заперта ли связь.
+        # Как и в render_placement, при нескольких рёбрах между парой комнат
+        # запертая связь имеет приоритет.
+        adj = {n: {} for n in graph.nodes}
+
+        def add(a, b, locked):
+            adj[a][b] = adj[a].get(b, False) or locked
+
+        for e in graph.edges:
+            add(e.from_node, e.to_node, e.key_required)
+            if not directed:
+                add(e.to_node, e.from_node, e.key_required)
+
+        dist = {start: 0}
+        locked_count = {start: 0}   # минимум запертых дверей среди кратчайших путей
+        queue = deque([start])
+
+        while queue:
+            u = queue.popleft()
+            for v, is_locked in adj[u].items():
+                cost = locked_count[u] + (1 if is_locked else 0)
+                if v not in dist:
+                    dist[v] = dist[u] + 1
+                    locked_count[v] = cost
+                    queue.append(v)
+                elif dist[v] == dist[u] + 1:
+                    # другой кратчайший путь: запоминаем тот, где меньше запертых дверей
+                    locked_count[v] = min(locked_count[v], cost)
+
+        if finish not in dist:
+            return None
+
+        return dist[finish], locked_count[finish] > 0
+    
     @staticmethod
     def validate_graph(
     graph: LevelGraph,
@@ -914,7 +968,6 @@ def render_placement(
 
     
 def main():
-    # Добавить проверку на кратчайший путь и наличие на нём запертой двери, иначе - перерегенерировать
     # + проверка, что комната не может разделиться, если перед ней дверь с ключом
     row = int(sys.argv[1])
     col = int(sys.argv[2])
@@ -930,7 +983,8 @@ def main():
         max_steps=10000,
     )
 
-    for attempt in range(50):
+    placement = graph = None
+    for attempt in range(100):
         gen_rng = Random(f"{seed}:gen:{attempt}")
         graph = generator.generate((row, col), gen_rng)
         if graph is None:
@@ -939,7 +993,17 @@ def main():
             continue
         if not LevelGenerator.is_bipartite(graph):
             continue
+        info = LevelGenerator.shortest_path_info(graph)
+        if info is None:
+            continue                      # непроходим
+        path_len, has_locked = info
+        if not has_locked:
+            continue    
         
+        if path_len < len(graph.nodes)*0.3:
+            continue
+        
+        placement = None
         for p in range(10):
             place_rng = Random(f"{seed}:place:{attempt}:{p}")
             placement = place_level(graph, (row, col), place_rng, max_search_steps=2000)

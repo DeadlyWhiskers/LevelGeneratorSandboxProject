@@ -11,7 +11,7 @@ class Edge:
     from_node: str
     to_node: str
     key_required: bool = False
-
+    
 @dataclass
 class LevelGraph:
     nodes: dict[str, Node]
